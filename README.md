@@ -32,5 +32,19 @@ Then, visit
 
     $ http://localhost:8080
 
+## Curl
 
+*To get the list of subscribers*
+
+```curl --location --request GET 'http://localhost:8080/subscriber/'```
+
+*To create a subscriber* 
+    
+    curl --location --request POST 'http://localhost:8080/subscriber/' \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+        "firstName": "Kaviarasu",
+        "lastName": "Sakthivadivel",
+        "email":"kascatchme@gmail.com"
+    }'
 
