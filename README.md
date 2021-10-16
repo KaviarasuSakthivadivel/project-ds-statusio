@@ -1,6 +1,6 @@
 # Status.io
 
-StatusIO is for incident tracking tool for the websites. Multiple Users can subscribe to multiple services either they will be notified via email or slack, discord channels or in the service's twitter handle. 
+StatusIO is an incident tracking tool for the websites. Multiple Users can subscribe to multiple services either they will be notified via email or slack, discord channels or in the service's twitter handle. 
 
 For the Phase I, we have simple server which accepts subcriber details that will be stored in the DB. 
 
