@@ -1,8 +1,8 @@
-package edu.buffalo.distributedsystems.statusio.api;
+package edu.buffalo.distributedsystems.incidenttracker.api;
 
-import edu.buffalo.distributedsystems.statusio.model.Subscriber;
-import edu.buffalo.distributedsystems.statusio.payload.SubscriptionUser;
-import edu.buffalo.distributedsystems.statusio.repository.SubscriberRepository;
+import edu.buffalo.distributedsystems.incidenttracker.model.Subscriber;
+import edu.buffalo.distributedsystems.incidenttracker.payload.SubscriptionUser;
+import edu.buffalo.distributedsystems.incidenttracker.repository.SubscriberRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

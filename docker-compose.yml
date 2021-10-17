@@ -2,11 +2,11 @@ version: '2'
 
 services:
     app:
-        image: 'status-io:latest'
+        image: 'incident-tracker:latest'
         build:
-            context: ./
+            context: ./incident-tracker
             dockerfile: Dockerfile
-        container_name: status-io-app
+        container_name: incident-tracker
         depends_on:
             - db
         environment:
@@ -18,6 +18,60 @@ services:
             - /Users/kaviarasu/DockerData:/app
         ports:
             - "8080:8080"
+        networks:
+            - status-io-network
+
+    event-broker:
+        image: 'event-broker:latest'
+        build:
+            context: ./event-broker
+            dockerfile: Dockerfile
+        container_name: status-io-broker
+        depends_on:
+            - db
+        environment:
+            - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/postgres
+            - SPRING_DATASOURCE_USERNAME=postgres
+            - SPRING_DATASOURCE_PASSWORD=admin
+            - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+        volumes:
+            - /Users/kaviarasu/DockerData:/broker
+        ports:
+            - "8081:8081"
+        networks:
+            - status-io-network
+
+    message-producer:
+        image: 'message-producer:latest'
+        build:
+            context: ./message-producer
+            dockerfile: Dockerfile
+        container_name: status-io-producer
+        depends_on:
+            - event-broker
+            - app
+        networks:
+            - status-io-network
+        volumes:
+            - /Users/kaviarasu/DockerData:/consumer
+        ports:
+            - "8082:8082"
+
+    message-consumer:
+        image: 'message-consumer:latest'
+        build:
+            context: ./message-consumer
+            dockerfile: Dockerfile
+        container_name: status-io-consumer
+        depends_on:
+            - event-broker
+            - app
+        networks:
+            - status-io-network
+        volumes:
+            - /Users/kaviarasu/DockerData:/consumer
+        ports:
+            - "8083:8083"
 
     db:
         image: 'postgres:13.1-alpine'
@@ -26,4 +80,10 @@ services:
               - POSTGRES_USER=postgres
               - POSTGRES_PASSWORD=admin
         ports:
-            - 5432:5432
+            - "5432:5432"
+        networks:
+            - status-io-network
+
+networks:
+    status-io-network:
+        driver: bridge

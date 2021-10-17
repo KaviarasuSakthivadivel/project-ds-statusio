@@ -1,6 +1,6 @@
-package edu.buffalo.distributedsystems.statusio.repository;
+package edu.buffalo.distributedsystems.incidenttracker.repository;
 
-import edu.buffalo.distributedsystems.statusio.model.Subscriber;
+import edu.buffalo.distributedsystems.incidenttracker.model.Subscriber;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.UUID;
