@@ -13,7 +13,7 @@ import javax.persistence.*;
 public class TopicSubscriptions {
     @Id
     @Column(name = "topic_subscription_id")
-    private String topic_subcription_id;
+    private String topic_subscription_id;
 
     @ManyToOne
     @JoinColumn(name = "topic_id")

@@ -9,5 +9,7 @@ import java.util.List;
 public interface TopicSubscriptionRepository extends JpaRepository<TopicSubscriptions, String> {
     List<TopicSubscriptions> findByTopics(Topics topic);
 
-    TopicSubscriptions findTopicSubscriptionsByConsumersAndAndTopics(String consumerId, String subscriptionId);
+    TopicSubscriptions findTopicSubscriptionsByConsumersAndAndTopics(String consumerId, String topicsId);
+
+    void deleteTopicSubscriptionsByConsumersAndTopics(String consumerId, String topicsId);
 }

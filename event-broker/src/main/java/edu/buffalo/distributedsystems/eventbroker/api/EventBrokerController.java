@@ -3,6 +3,7 @@ package edu.buffalo.distributedsystems.eventbroker.api;
 import edu.buffalo.distributedsystems.eventbroker.model.Consumers;
 import edu.buffalo.distributedsystems.eventbroker.model.TopicSubscriptions;
 import edu.buffalo.distributedsystems.eventbroker.model.Topics;
+import edu.buffalo.distributedsystems.eventbroker.payload.Consumer;
 import edu.buffalo.distributedsystems.eventbroker.payload.ProducerPayload;
 import edu.buffalo.distributedsystems.eventbroker.payload.Topic;
 import edu.buffalo.distributedsystems.eventbroker.repository.ConsumerRepository;
@@ -55,14 +56,29 @@ public class EventBrokerController {
         return new ResponseEntity<>(topicRow, HttpStatus.OK);
     }
 
+    @DeleteMapping(value = "/topics/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    private ResponseEntity<Topics> deleteTopic(@PathVariable String id) {
+        Topics topic = this.topicsRepository.getByTopicName(id);
+        if(topic != null) {
+            this.topicsRepository.delete(topic);
+            return new ResponseEntity<>(topic, HttpStatus.OK);
+        }
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+
     @PostMapping(value = "/consumers", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public ResponseEntity<Consumers> createConsumer(@RequestBody Consumers consumer) {
+    public ResponseEntity<Consumers> createConsumer(@RequestBody Consumer consumer) {
         logger.info("Adding Consumers into db :: consumer name :: " + consumer.getName());
-        consumer.setConsumer_id(UUID.randomUUID().toString());
-        consumer.set_active(true);
-        this.consumerRepository.save(consumer);
-        return new ResponseEntity<>(consumer, HttpStatus.OK);
+        Consumers consumerRow = new Consumers();
+        consumerRow.setConsumer_id(UUID.randomUUID().toString());
+        consumerRow.set_active(true);
+        consumerRow.setDomain(consumer.getDomain());
+        consumerRow.setName(consumer.getName());
+        consumerRow.setPort(consumer.getPort());
+        consumerRow.setProtocol(consumer.getProtocol());
+        this.consumerRepository.save(consumerRow);
+        return new ResponseEntity<>(consumerRow, HttpStatus.OK);
     }
 
     @GetMapping(value = "/consumers", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -78,22 +94,49 @@ public class EventBrokerController {
         return new ResponseEntity<>(consumer.get(), HttpStatus.NOT_FOUND);
     }
 
+    @DeleteMapping(value = "/consumers/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    private ResponseEntity<Consumers> deleteConsumer(@PathVariable String id) {
+        Optional<Consumers> consumer = this.consumerRepository.findById(id);
+        if(consumer.isPresent()) {
+            this.consumerRepository.delete(consumer.get());
+            return new ResponseEntity<>(consumer.get(), HttpStatus.OK);
+        }
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+
     @PutMapping(value = "/consumers/{id}/subscribe", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public ResponseEntity<Consumers> createConsumer(@PathVariable String id, @RequestParam String topicName) {
-        logger.debug("Subscribing consumer to the topic :: topic name :: " + id);
-        Topics topic = this.topicsRepository.getByTopicName(topicName);
+    public ResponseEntity<Consumers> subscribeToTopic(@PathVariable String id, @RequestParam String topicName) {
+        logger.debug("Subscribing consumer to the topic :: topic name :: " + topicName);
+        Optional<Topics> topic = Optional.ofNullable(this.topicsRepository.getByTopicName(topicName));
+        if(!topic.isPresent()) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
         Optional<Consumers> consumer = this.consumerRepository.findById(id);
         if(consumer.isPresent()) {
             TopicSubscriptions subscription = new TopicSubscriptions();
-            subscription.setTopic_subcription_id(UUID.randomUUID().toString());
+            subscription.setTopic_subscription_id(UUID.randomUUID().toString());
             subscription.setConsumers(consumer.get());
-            subscription.setTopics(topic);
+            subscription.setTopics(topic.get());
             this.subscriptionRepository.save(subscription);
         }
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @DeleteMapping(value = "/consumers/{id}/subscribe", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public ResponseEntity<Consumers> unsubscribeFromTopic(@PathVariable String id, @RequestParam String topicName) {
+        logger.debug("Unsubscribing consumer from the topic :: topic name :: " + topicName);
+        Optional<Topics> topic = Optional.ofNullable(this.topicsRepository.getByTopicName(topicName));
+        if(!topic.isPresent()) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        Optional<Consumers> consumer = this.consumerRepository.findById(id);
+        if(consumer.isPresent()) {
+            this.subscriptionRepository.deleteTopicSubscriptionsByConsumersAndTopics(id, topic.get().getTopicId());
+        }
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 
     @PostMapping(value = "/hook/produce", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody

@@ -22,7 +22,16 @@ public class Consumers {
     @Column(name = "is_active", columnDefinition = "boolean default true")
     private boolean is_active;
 
-    @OneToMany(mappedBy = "consumers")
+    @Column(name = "protocol", columnDefinition = "varchar(5) default 'http'")
+    private String protocol;
+
+    @Column(name = "domain", columnDefinition = "varchar(255) default 'localhost'")
+    private String domain;
+
+    @Column(name = "port", columnDefinition = "varchar(255)")
+    private String port;
+
+    @OneToMany(mappedBy = "consumers", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private Set<TopicSubscriptions> subscriptions;
 }
