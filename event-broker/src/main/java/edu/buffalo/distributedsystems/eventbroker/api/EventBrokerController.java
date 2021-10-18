@@ -1,9 +1,12 @@
 package edu.buffalo.distributedsystems.eventbroker.api;
 
 import edu.buffalo.distributedsystems.eventbroker.model.Consumers;
+import edu.buffalo.distributedsystems.eventbroker.model.TopicSubscriptions;
 import edu.buffalo.distributedsystems.eventbroker.model.Topics;
+import edu.buffalo.distributedsystems.eventbroker.payload.ProducerPayload;
 import edu.buffalo.distributedsystems.eventbroker.payload.Topic;
 import edu.buffalo.distributedsystems.eventbroker.repository.ConsumerRepository;
+import edu.buffalo.distributedsystems.eventbroker.repository.TopicSubscriptionRepository;
 import edu.buffalo.distributedsystems.eventbroker.repository.TopicsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @RestController
@@ -24,11 +28,13 @@ public class EventBrokerController {
 
     private final ConsumerRepository consumerRepository;
     private final TopicsRepository topicsRepository;
+    private final TopicSubscriptionRepository subscriptionRepository;
 
     @Autowired
-    public EventBrokerController(ConsumerRepository consumerRepository, TopicsRepository topicsRepository) {
+    public EventBrokerController(ConsumerRepository consumerRepository, TopicsRepository topicsRepository, TopicSubscriptionRepository subscriptionRepository) {
         this.consumerRepository = consumerRepository;
         this.topicsRepository = topicsRepository;
+        this.subscriptionRepository = subscriptionRepository;
     }
 
     @GetMapping(value = "/topics", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -40,13 +46,23 @@ public class EventBrokerController {
 
     @PostMapping(value = "/topics", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public ResponseEntity<Topics> createConsumer(@RequestBody Topic topic) {
+    public ResponseEntity<Topics> createTopic(@RequestBody Topic topic) {
         logger.debug("Adding Topic into db :: topic name :: " + topic.getTopic_name());
         Topics topicRow = new Topics();
-        topicRow.setTopic_name(topic.getTopic_name());
-        topicRow.setTopic_id(UUID.randomUUID().toString());
+        topicRow.setTopicName(topic.getTopic_name());
+        topicRow.setTopicId(UUID.randomUUID().toString());
         this.topicsRepository.save(topicRow);
         return new ResponseEntity<>(topicRow, HttpStatus.OK);
+    }
+
+    @PostMapping(value = "/consumers", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public ResponseEntity<Consumers> createConsumer(@RequestBody Consumers consumer) {
+        logger.info("Adding Consumers into db :: consumer name :: " + consumer.getName());
+        consumer.setConsumer_id(UUID.randomUUID().toString());
+        consumer.set_active(true);
+        this.consumerRepository.save(consumer);
+        return new ResponseEntity<>(consumer, HttpStatus.OK);
     }
 
     @GetMapping(value = "/consumers", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -59,10 +75,39 @@ public class EventBrokerController {
     @GetMapping(value = "/consumers/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     private ResponseEntity<Consumers> getConsumer(@PathVariable String id) {
         Optional<Consumers> consumer = Optional.of(this.consumerRepository.getById(id));
-        if(!consumer.isPresent()) {
-            logger.info("Consumers: " + consumer.toString());
-            return new ResponseEntity<>(consumer.get(), HttpStatus.OK);
+        return new ResponseEntity<>(consumer.get(), HttpStatus.NOT_FOUND);
+    }
+
+    @PutMapping(value = "/consumers/{id}/subscribe", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public ResponseEntity<Consumers> createConsumer(@PathVariable String id, @RequestParam String topicName) {
+        logger.debug("Subscribing consumer to the topic :: topic name :: " + id);
+        Topics topic = this.topicsRepository.getByTopicName(topicName);
+        Optional<Consumers> consumer = this.consumerRepository.findById(id);
+        if(consumer.isPresent()) {
+            TopicSubscriptions subscription = new TopicSubscriptions();
+            subscription.setTopic_subcription_id(UUID.randomUUID().toString());
+            subscription.setConsumers(consumer.get());
+            subscription.setTopics(topic);
+            this.subscriptionRepository.save(subscription);
         }
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+
+    @PostMapping(value = "/hook/produce", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public ResponseEntity<Topics> handleProduceEvent(@RequestBody ProducerPayload payload) {
+        logger.debug("Producing message to Topic :: topic name :: " + payload.getTopic_name());
+        if(payload.getTopic_name() != null) {
+            Topics currentTopic = this.topicsRepository.getByTopicName(payload.getTopic_name());
+            if(currentTopic != null) {
+                Set<TopicSubscriptions> topicSubscriptionsList = currentTopic.getConsumers();
+                for(TopicSubscriptions topic : topicSubscriptionsList) {
+                    logger.info("Consumers are :: " + topic.getConsumers().getConsumer_id());
+                }
+            }
+        }
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 }

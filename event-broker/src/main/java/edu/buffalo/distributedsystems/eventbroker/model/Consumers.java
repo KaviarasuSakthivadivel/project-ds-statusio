@@ -1,5 +1,6 @@
 package edu.buffalo.distributedsystems.eventbroker.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -18,9 +19,10 @@ public class Consumers {
     @Column(name = "name", columnDefinition = "varchar(255)")
     private String name;
 
-    @Column(name = "is_active", columnDefinition = "boolean default false")
+    @Column(name = "is_active", columnDefinition = "boolean default true")
     private boolean is_active;
 
     @OneToMany(mappedBy = "consumers")
+    @JsonManagedReference
     private Set<TopicSubscriptions> subscriptions;
 }

@@ -1,10 +1,10 @@
 package edu.buffalo.distributedsystems.eventbroker.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
-import java.util.UUID;
 
 @Entity
 @Getter
@@ -16,10 +16,13 @@ public class TopicSubscriptions {
     private String topic_subcription_id;
 
     @ManyToOne
-    @JoinColumn(name = "consumer_id")
-    private Consumers consumers;
+    @JoinColumn(name = "topic_id")
+    @JsonBackReference
+    private Topics topics;
 
     @ManyToOne
-    @JoinColumn(name = "topic_id")
-    private Topics topics;
+    @JoinColumn(name = "consumer_id")
+    @JsonBackReference
+    private Consumers consumers;
+
 }
