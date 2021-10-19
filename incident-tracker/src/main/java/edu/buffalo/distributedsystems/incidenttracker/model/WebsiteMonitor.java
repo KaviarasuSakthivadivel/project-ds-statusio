@@ -21,4 +21,8 @@ public class WebsiteMonitor {
 
     @Column(name = "website_url", nullable = false)
     private String website_url;
+
+    public String toString() {
+        return "WebsiteMonitor[ id: " + getId() + ", name: " + getName() + ", website_url:" + getWebsite_url() + "]";
+    }
 }

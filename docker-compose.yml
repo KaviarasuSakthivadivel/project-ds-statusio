@@ -62,7 +62,6 @@ services:
         build:
             context: ./message-consumer
             dockerfile: Dockerfile
-        container_name: status-io-consumer
         depends_on:
             - event-broker
             - app
@@ -71,7 +70,7 @@ services:
         volumes:
             - /Users/kaviarasu/DockerData:/consumer
         ports:
-            - "8083:8083"
+            - "8083"
 
     db:
         image: 'postgres:13.1-alpine'
@@ -81,6 +80,18 @@ services:
               - POSTGRES_PASSWORD=admin
         ports:
             - "5432:5432"
+        networks:
+            - status-io-network
+
+    nginx:
+        build:
+            context : ./nginx
+            dockerfile: Dockerfile
+        depends_on:
+            - message-consumer
+            - event-broker
+        ports:
+            - "4000:4000"
         networks:
             - status-io-network
 
