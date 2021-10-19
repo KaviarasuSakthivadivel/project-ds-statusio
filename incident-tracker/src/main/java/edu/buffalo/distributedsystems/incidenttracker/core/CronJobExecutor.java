@@ -2,38 +2,42 @@ package edu.buffalo.distributedsystems.incidenttracker.core;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
 import edu.buffalo.distributedsystems.incidenttracker.model.WebsiteHealth;
 import edu.buffalo.distributedsystems.incidenttracker.model.WebsiteMonitor;
-import edu.buffalo.distributedsystems.incidenttracker.repository.SubscriberRepository;
 import edu.buffalo.distributedsystems.incidenttracker.repository.WebsiteHealthRepository;
 import edu.buffalo.distributedsystems.incidenttracker.repository.WebsiteMonitorRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.ReactiveRedisOperations;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.*;
 
-@Component
+@Service
 public class CronJobExecutor {
 
     private final Logger logger = LoggerFactory.getLogger(CronJobExecutor.class);
     private final WebsiteMonitorRepository repository;
     private final WebsiteHealthRepository healthRepository;
+    private final ReactiveRedisOperations<String, String> redisTemplate;
 
     @Autowired
-    public CronJobExecutor(WebsiteMonitorRepository repository, WebsiteHealthRepository healthRepository) {
+    public CronJobExecutor(WebsiteMonitorRepository repository, WebsiteHealthRepository healthRepository, @Qualifier("messageTemplate") ReactiveRedisOperations<String, String> redisTemplate) {
         this.repository = repository;
         this.healthRepository = healthRepository;
+        this.redisTemplate = redisTemplate;
     }
+
+    @Value("${topic.name:website-health}")
+    private String topic;
 
     @Scheduled(cron = "0 0/1 * * * ?")
     public void scheduleFixedDelayTask() {
@@ -49,8 +53,13 @@ public class CronJobExecutor {
             Map<String, Object> postRequest = new HashMap<>();
             postRequest.put("eventName", "website-health");
             postRequest.put("message", monitorJSONStr);
-            String response = DoHTTPRequest.doPost(postRequest);
-            logger.info("Message produced :: " + response);
+//            String response = DoHTTPRequest.doPost(postRequest);
+
+//            EventMessage eventMessage = new EventMessage();
+//            eventMessage.setMessage(monitorJSONStr);
+//            eventMessage.setEventName("website-health");
+            this.redisTemplate.convertAndSend(topic, "Hello world").subscribe();
+            logger.info("Message produced :: ");
         }
     }
 

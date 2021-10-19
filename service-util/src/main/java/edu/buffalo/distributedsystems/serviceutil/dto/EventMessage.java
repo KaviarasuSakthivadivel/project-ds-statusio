@@ -1,4 +1,5 @@
-package edu.buffalo.distributedsystems.messageproducer.payload;
+package edu.buffalo.distributedsystems.serviceutil.dto;
+
 
 import lombok.Getter;
 import lombok.Setter;
