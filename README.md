@@ -48,3 +48,13 @@ Then, visit
         "email":"kascatchme@gmail.com"
     }'
 
+
+
+# Phase 2 Submission
+
+Since we didn't get a real-time API for website monitoring, we have created a project (incident-tracker) module in the repo 
+that runs a CRON job in the background and fetches the data for the Phase II. For tracking the website health/ status, we have created CRUD operations for the same. We can add / update / delete websites for health tracking. 
+
+
+
+

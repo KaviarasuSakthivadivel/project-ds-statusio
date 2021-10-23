@@ -1,8 +1,8 @@
-package edu.buffalo.distributedsystems.incidenttracker.api;
+package edu.buffalo.distributedsystems.messageconsumer.api;
 
-import edu.buffalo.distributedsystems.incidenttracker.model.Subscriber;
-import edu.buffalo.distributedsystems.incidenttracker.payload.SubscriptionUser;
-import edu.buffalo.distributedsystems.incidenttracker.repository.SubscriberRepository;
+import edu.buffalo.distributedsystems.messageconsumer.model.Subscriber;
+import edu.buffalo.distributedsystems.messageconsumer.payload.SubscriptionUser;
+import edu.buffalo.distributedsystems.messageconsumer.repository.SubscriberRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +20,7 @@ public class SubscriptionController {
     private final Logger logger = LoggerFactory.getLogger(SubscriptionController.class);
 
     private final SubscriberRepository repository;
+
 
     @Autowired
     public SubscriptionController(SubscriberRepository repository) {

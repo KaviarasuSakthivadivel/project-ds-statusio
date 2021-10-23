@@ -1,6 +1,6 @@
-package edu.buffalo.distributedsystems.incidenttracker.repository;
+package edu.buffalo.distributedsystems.messageconsumer.repository;
 
-import edu.buffalo.distributedsystems.incidenttracker.model.Subscriber;
+import edu.buffalo.distributedsystems.messageconsumer.model.Subscriber;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.UUID;

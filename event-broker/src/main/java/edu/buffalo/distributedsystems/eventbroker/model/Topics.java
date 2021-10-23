@@ -19,7 +19,7 @@ public class Topics {
     @Column(name = "topic_name", unique = true)
     private String topicName;
 
-    @OneToMany(mappedBy = "topics", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "topics", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JsonManagedReference
     private Set<TopicSubscriptions> consumers;
 }

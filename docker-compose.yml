@@ -10,11 +10,14 @@ services:
         depends_on:
             - db
             - redis
+        links:
+            - redis
         environment:
               - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/postgres
               - SPRING_DATASOURCE_USERNAME=postgres
               - SPRING_DATASOURCE_PASSWORD=admin
               - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+              - SPRING_REDIS_HOST=redis
         volumes:
             - /Users/kaviarasu/DockerData:/app
         ports:
@@ -31,11 +34,14 @@ services:
         depends_on:
             - db
             - redis
+        links:
+            - redis
         environment:
             - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/postgres
             - SPRING_DATASOURCE_USERNAME=postgres
             - SPRING_DATASOURCE_PASSWORD=admin
             - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+            - SPRING_REDIS_HOST=redis
         volumes:
             - /Users/kaviarasu/DockerData:/broker
         ports:
@@ -49,32 +55,45 @@ services:
             context: ./message-producer
             dockerfile: Dockerfile
         container_name: status-io-producer
+        environment:
+            - SPRING_REDIS_HOST=redis
         depends_on:
             - event-broker
             - app
             - redis
+        links:
+            - redis
         networks:
             - status-io-network
         volumes:
-            - /Users/kaviarasu/DockerData:/consumer
+            - /Users/kaviarasu/DockerData:/producer
         ports:
             - "8082:8082"
 
     message-consumer:
         image: 'message-consumer:latest'
+        container_name: message-consumer
         build:
             context: ./message-consumer
             dockerfile: Dockerfile
+        links:
+            - redis
         depends_on:
             - event-broker
             - app
             - redis
+        environment:
+            - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/postgres
+            - SPRING_DATASOURCE_USERNAME=postgres
+            - SPRING_DATASOURCE_PASSWORD=admin
+            - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+            - SPRING_REDIS_HOST=redis
         networks:
             - status-io-network
         volumes:
             - /Users/kaviarasu/DockerData:/consumer
         ports:
-            - "8083"
+            - "8083:8083"
 
     db:
         image: 'postgres:13.1-alpine'
@@ -101,6 +120,7 @@ services:
 
     redis:
         image: redis
+        container_name: redis-service
         ports:
             - "6379:6379"
         hostname: redis

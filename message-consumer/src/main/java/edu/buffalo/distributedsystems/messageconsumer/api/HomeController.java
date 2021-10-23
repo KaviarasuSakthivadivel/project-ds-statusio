@@ -1,23 +1,46 @@
 package edu.buffalo.distributedsystems.messageconsumer.api;
 
+import edu.buffalo.distributedsystems.messageconsumer.model.Notifications;
+import edu.buffalo.distributedsystems.messageconsumer.repository.NotificationsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 public class HomeController {
     private final Logger logger = LoggerFactory.getLogger(HomeController.class);
 
-    @RequestMapping("/")
-    public String index() {
-        return "index";
+    private final NotificationsRepository repository;
+
+    @Autowired
+    public HomeController(NotificationsRepository repository) {
+        this.repository = repository;
     }
 
-//    @PostMapping(value = "/consumer/consume", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-//    @ResponseBody
-//    public ResponseEntity<EventMessage> consumeMessage(@RequestBody EventMessage eventMessage) {
-//        logger.debug("Consuming message :: {0} ", new String[]{eventMessage.getMessage()});
-//        return new ResponseEntity<>(eventMessage, HttpStatus.OK);
-//    }
+    @GetMapping(value = "/notifications", produces = MediaType.APPLICATION_JSON_VALUE)
+    private ResponseEntity<List<Notifications>> getNotifications() {
+        List<Notifications> list = this.repository.findAll();
+        return new ResponseEntity<>(list, HttpStatus.ACCEPTED);
+    }
+
+    @GetMapping(value = "/notifications/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    private ResponseEntity<List<Notifications>> getNotification(@PathVariable String id) {
+        List<Notifications> list = this.repository.findAll();
+        List<Notifications> userNotification = new ArrayList<>();
+        list.forEach((n) -> {
+            if(n.getUser_id().equals(id)) {
+                userNotification.add(n);
+            }
+        });
+        return new ResponseEntity<>(userNotification, HttpStatus.ACCEPTED);
+    }
 }

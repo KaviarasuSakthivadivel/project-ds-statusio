@@ -1,4 +1,4 @@
-package edu.buffalo.distributedsystems.incidenttracker.model;
+package edu.buffalo.distributedsystems.messageconsumer.model;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;

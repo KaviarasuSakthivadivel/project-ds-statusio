@@ -5,8 +5,8 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class Consumer {
-    private String first_name;
-    private String last_name;
+public class SubscriberPayload {
+    private String firstName;
+    private String lastName;
     private String email;
 }

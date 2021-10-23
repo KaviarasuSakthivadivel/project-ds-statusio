@@ -6,6 +6,7 @@ import edu.buffalo.distributedsystems.incidenttracker.model.WebsiteHealth;
 import edu.buffalo.distributedsystems.incidenttracker.model.WebsiteMonitor;
 import edu.buffalo.distributedsystems.incidenttracker.repository.WebsiteHealthRepository;
 import edu.buffalo.distributedsystems.incidenttracker.repository.WebsiteMonitorRepository;
+import edu.buffalo.distributedsystems.serviceutil.dto.EventMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +20,10 @@ import org.springframework.stereotype.Service;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 public class CronJobExecutor {
@@ -27,16 +31,16 @@ public class CronJobExecutor {
     private final Logger logger = LoggerFactory.getLogger(CronJobExecutor.class);
     private final WebsiteMonitorRepository repository;
     private final WebsiteHealthRepository healthRepository;
-    private final ReactiveRedisOperations<String, String> redisTemplate;
+    private final ReactiveRedisOperations<String, EventMessage> redisTemplate;
 
     @Autowired
-    public CronJobExecutor(WebsiteMonitorRepository repository, WebsiteHealthRepository healthRepository, @Qualifier("messageTemplate") ReactiveRedisOperations<String, String> redisTemplate) {
+    public CronJobExecutor(WebsiteMonitorRepository repository, WebsiteHealthRepository healthRepository, @Qualifier("messageTemplate") ReactiveRedisOperations<String, EventMessage> redisTemplate) {
         this.repository = repository;
         this.healthRepository = healthRepository;
         this.redisTemplate = redisTemplate;
     }
 
-    @Value("${topic.name:website-health}")
+    @Value("${topic.name:website-health-notify}")
     private String topic;
 
     @Scheduled(cron = "0 0/1 * * * ?")
@@ -50,16 +54,18 @@ public class CronJobExecutor {
         for(WebsiteMonitor monitor: websiteMonitors) {
             WebsiteHealth health = checkWebsiteHealth(monitor);
             String monitorJSONStr = gson.toJson(monitor);
-            Map<String, Object> postRequest = new HashMap<>();
-            postRequest.put("eventName", "website-health");
-            postRequest.put("message", monitorJSONStr);
-//            String response = DoHTTPRequest.doPost(postRequest);
-
-//            EventMessage eventMessage = new EventMessage();
-//            eventMessage.setMessage(monitorJSONStr);
-//            eventMessage.setEventName("website-health");
-            this.redisTemplate.convertAndSend(topic, "Hello world").subscribe();
-            logger.info("Message produced :: ");
+            EventMessage eventMessage = new EventMessage();
+            eventMessage.setWebsiteName(monitor.getName());
+            eventMessage.setWebsiteId(monitor.getId());
+            eventMessage.setWebsiteUrl(monitor.getWebsite_url());
+            eventMessage.setStatus(health.getStatus());
+            eventMessage.setCreatedOn(health.getTracked_at().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            eventMessage.setEventName("website-health");
+            this.redisTemplate.convertAndSend(topic, eventMessage).subscribe();
+            logger.info("Message produced for topic :: "
+                    + eventMessage.getEventName() + " for website details :: "
+                    + eventMessage.getWebsiteUrl() + " : status :: " + eventMessage.getStatus()
+                    + " on " + eventMessage.getCreatedOn());
         }
     }
 
@@ -73,7 +79,7 @@ public class CronJobExecutor {
             HttpURLConnection huc = (HttpURLConnection) url.openConnection();
             huc.setInstanceFollowRedirects(false);
             int responseCode = huc.getResponseCode();
-            logger.info("STATUS of :: " + monitor.getWebsite_url() + " ---> " + responseCode);
+            logger.info("Status of :: " + monitor.getWebsite_url() + " ---> " + responseCode);
             health.setResponse_code(responseCode);
             if(responseCode == HttpStatus.OK.value()) {
                 health.setStatus(0);

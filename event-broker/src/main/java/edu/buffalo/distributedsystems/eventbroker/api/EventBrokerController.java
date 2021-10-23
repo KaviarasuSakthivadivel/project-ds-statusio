@@ -17,6 +17,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -56,6 +58,15 @@ public class EventBrokerController {
         return new ResponseEntity<>(topicRow, HttpStatus.OK);
     }
 
+    @GetMapping(value = "/topics/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    private ResponseEntity<Topics> getTopic(@PathVariable String id) {
+        Topics topic = this.topicsRepository.getByTopicName(id);
+        if(topic != null) {
+            return new ResponseEntity<>(topic, HttpStatus.OK);
+        }
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+
     @DeleteMapping(value = "/topics/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     private ResponseEntity<Topics> deleteTopic(@PathVariable String id) {
         Topics topic = this.topicsRepository.getByTopicName(id);
@@ -69,14 +80,13 @@ public class EventBrokerController {
     @PostMapping(value = "/consumers", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public ResponseEntity<Consumers> createConsumer(@RequestBody Consumer consumer) {
-        logger.info("Adding Consumers into db :: consumer name :: " + consumer.getName());
+        logger.info("Adding Consumers into db :: consumer email id :: " + consumer.getEmail());
         Consumers consumerRow = new Consumers();
         consumerRow.setConsumer_id(UUID.randomUUID().toString());
-        consumerRow.set_active(true);
-        consumerRow.setDomain(consumer.getDomain());
-        consumerRow.setName(consumer.getName());
-        consumerRow.setPort(consumer.getPort());
-        consumerRow.setProtocol(consumer.getProtocol());
+        consumerRow.setActive(true);
+        consumerRow.setFirstName(consumer.getFirst_name());
+        consumerRow.setLast_name(consumer.getLast_name());
+        consumerRow.setEmailId(consumer.getEmail());
         this.consumerRepository.save(consumerRow);
         return new ResponseEntity<>(consumerRow, HttpStatus.OK);
     }
@@ -142,6 +152,12 @@ public class EventBrokerController {
     @ResponseBody
     public ResponseEntity<Topics> handleProduceEvent(@RequestBody ProducerPayload payload) {
         logger.debug("Producing message to Topic :: topic name :: " + payload.getTopic_name());
+        try {
+            InetAddress ip = InetAddress.getLocalHost();
+            logger.info("------------- Connecting to IP address :: " + ip + " Host Name :: " + ip.getHostName() + " -------------------");
+        } catch (UnknownHostException ignored) {
+
+        }
         if(payload.getTopic_name() != null) {
             Topics currentTopic = this.topicsRepository.getByTopicName(payload.getTopic_name());
             if(currentTopic != null) {

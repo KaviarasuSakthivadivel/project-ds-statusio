@@ -18,7 +18,7 @@ import java.util.UUID;
 @Controller
 @RequestMapping(path = "/website/tracking")
 public class WebsiteMonitorController {
-    private final Logger logger = LoggerFactory.getLogger(SubscriptionController.class);
+    private final Logger logger = LoggerFactory.getLogger(WebsiteMonitorController.class);
 
     private final WebsiteMonitorRepository repository;
 

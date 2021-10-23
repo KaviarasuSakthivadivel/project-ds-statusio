@@ -47,13 +47,24 @@
                         </exclude>
                     </excludes>
                 </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.2.0</version>
                 <executions>
                     <execution>
+                        <id>copy-resource-one</id>
+                        <phase>package</phase>
                         <goals>
-                            <goal>repackage</goal>
+                            <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <mainClass>edu.buffalo.distributedsystems.serviceutil.ServiceUtilApplication</mainClass>
+                            <outputDirectory>${basedir}/../lib/</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/target/classes</directory>
+                                </resource>
+                            </resources>
                         </configuration>
                     </execution>
                 </executions>

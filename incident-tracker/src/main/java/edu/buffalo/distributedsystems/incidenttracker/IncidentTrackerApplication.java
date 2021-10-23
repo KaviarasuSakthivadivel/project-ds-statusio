@@ -1,5 +1,6 @@
 package edu.buffalo.distributedsystems.incidenttracker;
 
+import edu.buffalo.distributedsystems.serviceutil.dto.EventMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -23,9 +24,9 @@ public class IncidentTrackerApplication {
     }
 
     @Bean
-    public ReactiveRedisOperations<String, String> messageTemplate(LettuceConnectionFactory lettuceConnectionFactory){
-        RedisSerializer<String> valueSerializer = new Jackson2JsonRedisSerializer<>(String.class);
-        RedisSerializationContext<String, String> serializationContext = RedisSerializationContext.<String, String>newSerializationContext(RedisSerializer.string())
+    public ReactiveRedisOperations<String, EventMessage> messageTemplate(LettuceConnectionFactory lettuceConnectionFactory){
+        RedisSerializer<EventMessage> valueSerializer = new Jackson2JsonRedisSerializer<>(EventMessage.class);
+        RedisSerializationContext<String, EventMessage> serializationContext = RedisSerializationContext.<String, EventMessage>newSerializationContext(RedisSerializer.string())
                 .value(valueSerializer)
                 .build();
         return new ReactiveRedisTemplate<>(lettuceConnectionFactory, serializationContext);
