@@ -49,7 +49,7 @@ function showGreeting(message) {
         if(message.status == 1) {
             status = "Down";
         }
-        $("#greetings").append("<tr><td>" + message.date + "</td><td>"
+        $("#greetings").prepend("<tr><td>" + message.date + "</td><td>"
             +  message.websiteName  + "</td><td>" + message.websiteUrl + "</td><td>" + status + "</td></tr>");
     }
 
