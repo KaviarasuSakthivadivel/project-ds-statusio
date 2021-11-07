@@ -110,3 +110,9 @@ Then go to, message-consumer UI, where the consumers can connect using the web s
 Follow all the process from the phase 2. Here we can use scale-up in Docker to spin up three brokers to handle the topics. 
 
 ![Architectural](images/3.jpg)
+
+### Contributions
+ - Incident tracker for website health tracking - Kaviarasu Sakthivadivel.
+ - Message Producer and Message Consumer Implementations in both phases - Sendil Balan Palanivel
+ - Event broker, we split the work for Phase 3 - Kaviarasu Sakthivadivel & Sendil Balan Palanivel
+
