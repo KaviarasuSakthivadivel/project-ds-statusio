@@ -30,7 +30,7 @@ services:
         build:
             context: ./event-broker
             dockerfile: Dockerfile
-#        container_name: status-io-broker
+        container_name: status-io-broker-a
         depends_on:
             - db
             - redis
@@ -45,7 +45,31 @@ services:
         volumes:
             - /Users/kaviarasu/DockerData:/broker
         ports:
-            - "8090-8092:8081"
+            - "8081:8081"
+        networks:
+            - status-io-network
+
+    event-broker-b:
+        image: 'event-broker-b:latest'
+        build:
+            context: ./event-broker-b
+            dockerfile: Dockerfile
+        container_name: status-io-broker-b
+        depends_on:
+            - db
+            - redis
+        links:
+            - redis
+        environment:
+            - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/postgres
+            - SPRING_DATASOURCE_USERNAME=postgres
+            - SPRING_DATASOURCE_PASSWORD=admin
+            - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+            - SPRING_REDIS_HOST=redis
+        volumes:
+            - /Users/kaviarasu/DockerData:/brokerb
+        ports:
+            - "8084:8084"
         networks:
             - status-io-network
 

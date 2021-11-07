@@ -1,13 +1,13 @@
-package edu.buffalo.distributedsystems.eventbroker.service;
+package edu.buffalo.distributedsystems.eventbrokerb.service;
 
-import edu.buffalo.distributedsystems.eventbroker.entity.TopicBrokerMapping;
-import edu.buffalo.distributedsystems.eventbroker.model.Consumers;
-import edu.buffalo.distributedsystems.eventbroker.model.TopicSubscriptions;
-import edu.buffalo.distributedsystems.eventbroker.model.Topics;
-import edu.buffalo.distributedsystems.eventbroker.repository.ConsumerRepository;
-import edu.buffalo.distributedsystems.eventbroker.repository.EventBrokerRepository;
-import edu.buffalo.distributedsystems.eventbroker.repository.TopicSubscriptionRepository;
-import edu.buffalo.distributedsystems.eventbroker.repository.TopicsRepository;
+import edu.buffalo.distributedsystems.eventbrokerb.entity.TopicBrokerMapping;
+import edu.buffalo.distributedsystems.eventbrokerb.model.Consumers;
+import edu.buffalo.distributedsystems.eventbrokerb.model.TopicSubscriptions;
+import edu.buffalo.distributedsystems.eventbrokerb.model.Topics;
+import edu.buffalo.distributedsystems.eventbrokerb.repository.ConsumerRepository;
+import edu.buffalo.distributedsystems.eventbrokerb.repository.EventBrokerRepository;
+import edu.buffalo.distributedsystems.eventbrokerb.repository.TopicSubscriptionRepository;
+import edu.buffalo.distributedsystems.eventbrokerb.repository.TopicsRepository;
 import edu.buffalo.distributedsystems.serviceutil.dto.ConsumerMessage;
 import edu.buffalo.distributedsystems.serviceutil.dto.EventMessage;
 import org.slf4j.Logger;
@@ -23,7 +23,6 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PostConstruct;
 import java.net.InetAddress;
 import java.util.Arrays;
-import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -122,15 +121,15 @@ public class EventBrokerRedisService {
 
     @PostConstruct
     private void init() {
-        this.redisTemplate
-            .listenTo(ChannelTopic.of(BROKER_INTERNAL_DOMAIN_HEALTH_TOPIC))
-            .map(ReactiveSubscription.Message::getMessage)
-            .subscribe((this::processEventMessage));
-
 //        this.redisTemplate
-//                .listenTo(ChannelTopic.of(BROKER_EXTERNAL_DOMAIN_HEALTH_TOPIC))
-//                .map(ReactiveSubscription.Message::getMessage)
-//                .subscribe((this::processEventMessage));
+//            .listenTo(ChannelTopic.of(BROKER_INTERNAL_DOMAIN_HEALTH_TOPIC))
+//            .map(ReactiveSubscription.Message::getMessage)
+//            .subscribe((this::processEventMessage));
+
+        this.redisTemplate
+                .listenTo(ChannelTopic.of(BROKER_EXTERNAL_DOMAIN_HEALTH_TOPIC))
+                .map(ReactiveSubscription.Message::getMessage)
+                .subscribe((this::processEventMessage));
 
         this.redisTemplate
                 .listenTo(ChannelTopic.of(BROKER_THIRD_PARTY_DOMAIN_HEALTH_TOPIC))
