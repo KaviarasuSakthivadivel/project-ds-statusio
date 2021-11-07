@@ -18,12 +18,33 @@ public class ProducerRedisService {
     private final ReactiveRedisOperations<String, EventMessage> redisTemplate;
 
     private static final Logger logger = LoggerFactory.getLogger(ProducerRedisService.class);
+    private final static String INTERNAL_DOMAIN_HEALTH = "internal-domain-health";
+    private final static String EXTERNAL_DOMAIN_HEALTH = "external-domain-health";
+    private final static String THIRD_PARTY_DOMAIN_HEALTH = "tp-domain-health";
 
-    @Value("${topic.name:website-health-notify}")
+    @Value("${topic.name:internal-domain-health-p}")
     private String topic;
 
-    @Value("${topic.name:website-health}")
+    @Value("${topic.name:internal-domain-health-e}")
     private String eventBrokerTopic;
+
+    @Value("${topic.name:" + INTERNAL_DOMAIN_HEALTH + "-p}")
+    private String PRODUCER_INTERNAL_DOMAIN_HEALTH_TOPIC;
+
+    @Value("${topic.name:" + EXTERNAL_DOMAIN_HEALTH + "-p}")
+    private String PRODUCER_EXTERNAL_DOMAIN_HEALTH_TOPIC;
+
+    @Value("${topic.name:" + THIRD_PARTY_DOMAIN_HEALTH + "-p}")
+    private String PRODUCER_THIRD_PARTY_DOMAIN_HEALTH_TOPIC;
+
+    @Value("${topic.name:" + INTERNAL_DOMAIN_HEALTH + "-e}")
+    private String BROKER_INTERNAL_DOMAIN_HEALTH_TOPIC;
+
+    @Value("${topic.name:" + EXTERNAL_DOMAIN_HEALTH + "-e}")
+    private String BROKER_EXTERNAL_DOMAIN_HEALTH_TOPIC;
+
+    @Value("${topic.name:" + THIRD_PARTY_DOMAIN_HEALTH + "-e}")
+    private String BROKER_THIRD_PARTY_DOMAIN_HEALTH_TOPIC;
 
     @Autowired
     public ProducerRedisService(@Qualifier("messageTemplate") ReactiveRedisOperations<String, EventMessage> redisTemplate) {
@@ -35,11 +56,27 @@ public class ProducerRedisService {
     private void init() {
         logger.info("PostConstruct");
         this.redisTemplate
-                .listenTo(ChannelTopic.of(topic))
+                .listenTo(ChannelTopic.of(PRODUCER_INTERNAL_DOMAIN_HEALTH_TOPIC))
                 .map(ReactiveSubscription.Message::getMessage)
                 .subscribe((eventMessage -> {
                     logger.info("Event message :: "  + eventMessage.getEventName() + " " + eventMessage.getWebsiteUrl());
-                    this.redisTemplate.convertAndSend(eventBrokerTopic, eventMessage).subscribe();
+                    this.redisTemplate.convertAndSend(BROKER_INTERNAL_DOMAIN_HEALTH_TOPIC, eventMessage).subscribe();
+                }));
+
+        this.redisTemplate
+                .listenTo(ChannelTopic.of(PRODUCER_EXTERNAL_DOMAIN_HEALTH_TOPIC))
+                .map(ReactiveSubscription.Message::getMessage)
+                .subscribe((eventMessage -> {
+                    logger.info("Event message :: "  + eventMessage.getEventName() + " " + eventMessage.getWebsiteUrl());
+                    this.redisTemplate.convertAndSend(BROKER_EXTERNAL_DOMAIN_HEALTH_TOPIC, eventMessage).subscribe();
+                }));
+
+        this.redisTemplate
+                .listenTo(ChannelTopic.of(PRODUCER_THIRD_PARTY_DOMAIN_HEALTH_TOPIC))
+                .map(ReactiveSubscription.Message::getMessage)
+                .subscribe((eventMessage -> {
+                    logger.info("Event message :: "  + eventMessage.getEventName() + " " + eventMessage.getWebsiteUrl());
+                    this.redisTemplate.convertAndSend(BROKER_THIRD_PARTY_DOMAIN_HEALTH_TOPIC, eventMessage).subscribe();
                 }));
     }
 }

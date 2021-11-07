@@ -2,6 +2,8 @@ package edu.buffalo.distributedsystems.eventbroker;
 
 import edu.buffalo.distributedsystems.serviceutil.dto.ConsumerMessage;
 import edu.buffalo.distributedsystems.serviceutil.dto.EventMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -16,6 +18,7 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 @SpringBootApplication
 @EntityScan("edu.buffalo.distributedsystems.eventbroker.model")
 public class EventBrokerApplication {
+    private static final Logger logger = LoggerFactory.getLogger(EventBrokerApplication.class);
 
     public static void main(String[] args) {
         SpringApplication.run(EventBrokerApplication.class, args);

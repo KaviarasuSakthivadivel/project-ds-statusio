@@ -19,10 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @RestController
 @RequestMapping(path = "/broker")
@@ -154,9 +151,10 @@ public class EventBrokerController {
         logger.debug("Producing message to Topic :: topic name :: " + payload.getTopic_name());
         try {
             InetAddress ip = InetAddress.getLocalHost();
+            logger.info(Arrays.toString(ip.getAddress()));
             logger.info("------------- Connecting to IP address :: " + ip + " Host Name :: " + ip.getHostName() + " -------------------");
-        } catch (UnknownHostException ignored) {
-
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         if(payload.getTopic_name() != null) {
             Topics currentTopic = this.topicsRepository.getByTopicName(payload.getTopic_name());

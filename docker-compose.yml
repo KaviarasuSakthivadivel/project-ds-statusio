@@ -30,7 +30,7 @@ services:
         build:
             context: ./event-broker
             dockerfile: Dockerfile
-        container_name: status-io-broker
+#        container_name: status-io-broker
         depends_on:
             - db
             - redis
@@ -45,7 +45,7 @@ services:
         volumes:
             - /Users/kaviarasu/DockerData:/broker
         ports:
-            - "8081:8081"
+            - "8090-8092:8081"
         networks:
             - status-io-network
 

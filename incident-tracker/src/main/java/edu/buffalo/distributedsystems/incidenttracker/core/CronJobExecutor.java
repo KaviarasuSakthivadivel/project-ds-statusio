@@ -1,7 +1,5 @@
 package edu.buffalo.distributedsystems.incidenttracker.core;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import edu.buffalo.distributedsystems.incidenttracker.model.WebsiteHealth;
 import edu.buffalo.distributedsystems.incidenttracker.model.WebsiteMonitor;
 import edu.buffalo.distributedsystems.incidenttracker.repository.WebsiteHealthRepository;
@@ -27,7 +25,9 @@ import java.util.UUID;
 
 @Service
 public class CronJobExecutor {
-
+    private final static String INTERNAL_DOMAIN_HEALTH = "internal-domain-health";
+    private final static String EXTERNAL_DOMAIN_HEALTH = "external-domain-health";
+    private final static String THIRD_PARTY_DOMAIN_HEALTH = "tp-domain-health";
     private final Logger logger = LoggerFactory.getLogger(CronJobExecutor.class);
     private final WebsiteMonitorRepository repository;
     private final WebsiteHealthRepository healthRepository;
@@ -38,30 +38,46 @@ public class CronJobExecutor {
         this.repository = repository;
         this.healthRepository = healthRepository;
         this.redisTemplate = redisTemplate;
+
     }
 
-    @Value("${topic.name:website-health-notify}")
-    private String topic;
+    @Value("${topic.name:" + INTERNAL_DOMAIN_HEALTH + "-p}")
+    private String INTERNAL_DOMAIN_HEALTH_TOPIC;
+
+    @Value("${topic.name:" + EXTERNAL_DOMAIN_HEALTH + "-p}")
+    private String EXTERNAL_DOMAIN_HEALTH_TOPIC;
+
+    @Value("${topic.name:" + THIRD_PARTY_DOMAIN_HEALTH + "-p}")
+    private String THIRD_PARTY_DOMAIN_HEALTH_TOPIC;
 
     @Scheduled(cron = "0 0/1 * * * ?")
     public void scheduleFixedDelayTask() {
         logger.info("Executing CRON JOB for tracking the website details - " + new Date());
         List<WebsiteMonitor> websiteMonitors = this.repository.findAll();
-        GsonBuilder builder = new GsonBuilder();
-        builder.setPrettyPrinting();
-
-        Gson gson = builder.create();
         for(WebsiteMonitor monitor: websiteMonitors) {
             WebsiteHealth health = checkWebsiteHealth(monitor);
-            String monitorJSONStr = gson.toJson(monitor);
+//            String monitorJSONStr = gson.toJson(monitor);
             EventMessage eventMessage = new EventMessage();
             eventMessage.setWebsiteName(monitor.getName());
             eventMessage.setWebsiteId(monitor.getId());
             eventMessage.setWebsiteUrl(monitor.getWebsite_url());
             eventMessage.setStatus(health.getStatus());
             eventMessage.setCreatedOn(health.getTracked_at().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-            eventMessage.setEventName("website-health");
-            this.redisTemplate.convertAndSend(topic, eventMessage).subscribe();
+
+            switch (monitor.getCategory()) {
+                case INTERNAL_DOMAIN_HEALTH:
+                    eventMessage.setEventName(INTERNAL_DOMAIN_HEALTH);
+                    this.redisTemplate.convertAndSend(INTERNAL_DOMAIN_HEALTH_TOPIC, eventMessage).subscribe();
+                    break;
+                case EXTERNAL_DOMAIN_HEALTH:
+                    eventMessage.setEventName(EXTERNAL_DOMAIN_HEALTH);
+                    this.redisTemplate.convertAndSend(EXTERNAL_DOMAIN_HEALTH_TOPIC, eventMessage).subscribe();
+                    break;
+                case THIRD_PARTY_DOMAIN_HEALTH:
+                    eventMessage.setEventName(THIRD_PARTY_DOMAIN_HEALTH);
+                    this.redisTemplate.convertAndSend(THIRD_PARTY_DOMAIN_HEALTH_TOPIC, eventMessage).subscribe();
+                    break;
+            }
             logger.info("Message produced for topic :: "
                     + eventMessage.getEventName() + " for website details :: "
                     + eventMessage.getWebsiteUrl() + " : status :: " + eventMessage.getStatus()
