@@ -101,5 +101,12 @@ Then go to, message-consumer UI, where the consumers can connect using the web s
     http://localhost:8083 
 
 
+# Phase 3 Submission
+## Usage
+    $ https://github.com/KaviarasuSakthivadivel/project-ds-statusio.git`
+    
+    $ cd project-ds-statusio
 
+Follow all the process from the phase 2. Here we can use scale-up in Docker to spin up three brokers to handle the topics. 
 
+![Architectural](images/3.jpg)
