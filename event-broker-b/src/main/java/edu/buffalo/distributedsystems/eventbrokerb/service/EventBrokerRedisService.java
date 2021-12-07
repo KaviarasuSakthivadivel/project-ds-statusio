@@ -131,10 +131,10 @@ public class EventBrokerRedisService {
                 .map(ReactiveSubscription.Message::getMessage)
                 .subscribe((this::processEventMessage));
 
-        this.redisTemplate
-                .listenTo(ChannelTopic.of(BROKER_THIRD_PARTY_DOMAIN_HEALTH_TOPIC))
-                .map(ReactiveSubscription.Message::getMessage)
-                .subscribe((this::processEventMessage));
+//        this.redisTemplate
+//                .listenTo(ChannelTopic.of(BROKER_THIRD_PARTY_DOMAIN_HEALTH_TOPIC))
+//                .map(ReactiveSubscription.Message::getMessage)
+//                .subscribe((this::processEventMessage));
 
         try {
             InetAddress ip = InetAddress.getLocalHost();
