@@ -1,6 +1,82 @@
 version: '2'
 
 services:
+    zookeeper-1:
+        image: confluentinc/cp-zookeeper:latest
+        environment:
+            ZOOKEEPER_CLIENT_PORT: 2181
+            ZOOKEEPER_TICK_TIME: 2000
+        ports:
+            - 22181:2181
+        networks:
+            - status-io-network
+
+    zookeeper-2:
+        image: confluentinc/cp-zookeeper:latest
+        environment:
+            ZOOKEEPER_CLIENT_PORT: 2181
+            ZOOKEEPER_TICK_TIME: 2000
+        ports:
+            - 32181:2181
+
+    zookeeper-3:
+        image: confluentinc/cp-zookeeper:latest
+        environment:
+            ZOOKEEPER_CLIENT_PORT: 2181
+            ZOOKEEPER_TICK_TIME: 2000
+        ports:
+            - 42181:2181
+
+    kafka-1:
+        image: confluentinc/cp-kafka:latest
+        depends_on:
+            - zookeeper-1
+            - zookeeper-2
+            - zookeeper-3
+        ports:
+            - 29092:29092
+        environment:
+            KAFKA_BROKER_ID: 1
+            KAFKA_ZOOKEEPER_CONNECT: zookeeper-1:2181,zookeeper-2:2181
+            KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:9092,PLAINTEXT_HOST://localhost:29092
+            KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+            KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+            KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+        networks:
+            - status-io-network
+
+    kafka-2:
+        image: confluentinc/cp-kafka:latest
+        depends_on:
+            - zookeeper-1
+            - zookeeper-2
+            - zookeeper-3
+        ports:
+            - 39092:39092
+        environment:
+            KAFKA_BROKER_ID: 2
+            KAFKA_ZOOKEEPER_CONNECT: zookeeper-1:2181,zookeeper-2:2181
+            KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:9092,PLAINTEXT_HOST://localhost:39092
+            KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+            KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+            KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+    kafka-3:
+        image: confluentinc/cp-kafka:latest
+        depends_on:
+            - zookeeper-1
+            - zookeeper-2
+            - zookeeper-3
+        ports:
+            - 49092:49092
+        environment:
+            KAFKA_BROKER_ID: 3
+            KAFKA_ZOOKEEPER_CONNECT: zookeeper-1:2181,zookeeper-2:2181,zookeeper-3:2181,
+            KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:9092,PLAINTEXT_HOST://localhost:49092
+            KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+            KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+            KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
     app:
         image: 'incident-tracker:latest'
         build:
@@ -10,6 +86,8 @@ services:
         depends_on:
             - db
             - redis
+            - kafka-1
+            - kafka-2
         links:
             - redis
         environment:
@@ -25,12 +103,32 @@ services:
         networks:
             - status-io-network
 
+    db:
+        image: 'postgres:13.1-alpine'
+        container_name: status-io-db
+        environment:
+            - POSTGRES_USER=postgres
+            - POSTGRES_PASSWORD=admin
+        ports:
+            - "5432:5432"
+        networks:
+            - status-io-network
+
+    redis:
+        image: redis
+        container_name: redis-service
+        ports:
+            - "6379:6379"
+        hostname: redis
+        networks:
+            - status-io-network
+
     event-broker:
         image: 'event-broker:latest'
         build:
             context: ./event-broker
             dockerfile: Dockerfile
-        container_name: status-io-broker-a
+        container_name: status-io-subscriber-manager
         depends_on:
             - db
             - redis
@@ -49,75 +147,6 @@ services:
         networks:
             - status-io-network
 
-    event-broker-b:
-        image: 'event-broker-b:latest'
-        build:
-            context: ./event-broker-b
-            dockerfile: Dockerfile
-        container_name: status-io-broker-b
-        depends_on:
-            - db
-            - redis
-        links:
-            - redis
-        environment:
-            - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/postgres
-            - SPRING_DATASOURCE_USERNAME=postgres
-            - SPRING_DATASOURCE_PASSWORD=admin
-            - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-            - SPRING_REDIS_HOST=redis
-        volumes:
-            - /Users/kaviarasu/DockerData:/brokerb
-        ports:
-            - "8084:8084"
-        networks:
-            - status-io-network
-
-    event-broker-c:
-        image: 'event-broker-c:latest'
-        build:
-            context: ./event-broker-c
-            dockerfile: Dockerfile
-        container_name: status-io-broker-c
-        depends_on:
-            - db
-            - redis
-        links:
-            - redis
-        environment:
-            - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/postgres
-            - SPRING_DATASOURCE_USERNAME=postgres
-            - SPRING_DATASOURCE_PASSWORD=admin
-            - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-            - SPRING_REDIS_HOST=redis
-        volumes:
-            - /Users/kaviarasu/DockerData:/brokerc
-        ports:
-            - "8085:8085"
-        networks:
-            - status-io-network
-
-    message-producer:
-        image: 'message-producer:latest'
-        build:
-            context: ./message-producer
-            dockerfile: Dockerfile
-        container_name: status-io-producer
-        environment:
-            - SPRING_REDIS_HOST=redis
-        depends_on:
-            - event-broker
-            - app
-            - redis
-        links:
-            - redis
-        networks:
-            - status-io-network
-        volumes:
-            - /Users/kaviarasu/DockerData:/producer
-        ports:
-            - "8082:8082"
-
     message-consumer:
         image: 'message-consumer:latest'
         container_name: message-consumer
@@ -127,7 +156,6 @@ services:
         links:
             - redis
         depends_on:
-            - event-broker
             - app
             - redis
         environment:
@@ -142,38 +170,6 @@ services:
             - /Users/kaviarasu/DockerData:/consumer
         ports:
             - "8083:8083"
-
-    db:
-        image: 'postgres:13.1-alpine'
-        container_name: status-io-db
-        environment:
-              - POSTGRES_USER=postgres
-              - POSTGRES_PASSWORD=admin
-        ports:
-            - "5432:5432"
-        networks:
-            - status-io-network
-
-    nginx:
-        build:
-            context : ./nginx
-            dockerfile: Dockerfile
-        depends_on:
-            - message-consumer
-            - event-broker
-        ports:
-            - "4000:4000"
-        networks:
-            - status-io-network
-
-    redis:
-        image: redis
-        container_name: redis-service
-        ports:
-            - "6379:6379"
-        hostname: redis
-        networks:
-            - status-io-network
 
 networks:
     status-io-network:

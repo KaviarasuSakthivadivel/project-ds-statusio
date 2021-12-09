@@ -1,5 +1,6 @@
 package edu.buffalo.distributedsystems.incidenttracker.core;
 
+import edu.buffalo.distributedsystems.incidenttracker.kafka.core.MessageProducer;
 import edu.buffalo.distributedsystems.incidenttracker.model.WebsiteHealth;
 import edu.buffalo.distributedsystems.incidenttracker.model.WebsiteMonitor;
 import edu.buffalo.distributedsystems.incidenttracker.repository.WebsiteHealthRepository;
@@ -10,10 +11,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.core.ReactiveRedisOperations;
 import org.springframework.http.HttpStatus;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import org.springframework.util.concurrent.ListenableFuture;
+import org.springframework.util.concurrent.ListenableFutureCallback;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -32,13 +42,14 @@ public class CronJobExecutor {
     private final WebsiteMonitorRepository repository;
     private final WebsiteHealthRepository healthRepository;
     private final ReactiveRedisOperations<String, EventMessage> redisTemplate;
+    private final MessageProducer producer;
 
     @Autowired
-    public CronJobExecutor(WebsiteMonitorRepository repository, WebsiteHealthRepository healthRepository, @Qualifier("messageTemplate") ReactiveRedisOperations<String, EventMessage> redisTemplate) {
+    public CronJobExecutor(WebsiteMonitorRepository repository, WebsiteHealthRepository healthRepository, @Qualifier("messageTemplate") ReactiveRedisOperations<String, EventMessage> redisTemplate, MessageProducer producer) {
         this.repository = repository;
         this.healthRepository = healthRepository;
         this.redisTemplate = redisTemplate;
-
+        this.producer = producer;
     }
 
     @Value("${topic.name:" + INTERNAL_DOMAIN_HEALTH + "-p}")
@@ -50,10 +61,20 @@ public class CronJobExecutor {
     @Value("${topic.name:" + THIRD_PARTY_DOMAIN_HEALTH + "-p}")
     private String THIRD_PARTY_DOMAIN_HEALTH_TOPIC;
 
+    @Value(value = "${internal.topic.name}")
+    private String internalDomainHealthTopic;
+
+    @Value(value = "${external.topic.name}")
+    private String externalDomainHealthTopic;
+
+    @Value(value = "${tp.topic.name}")
+    private String tpDomainHealthTopic;
+
     @Scheduled(cron = "0 0/1 * * * ?")
     public void scheduleFixedDelayTask() {
         logger.info("Executing CRON JOB for tracking the website details - " + new Date());
         List<WebsiteMonitor> websiteMonitors = this.repository.findAll();
+
         for(WebsiteMonitor monitor: websiteMonitors) {
             WebsiteHealth health = checkWebsiteHealth(monitor);
 //            String monitorJSONStr = gson.toJson(monitor);
@@ -63,19 +84,20 @@ public class CronJobExecutor {
             eventMessage.setWebsiteUrl(monitor.getWebsite_url());
             eventMessage.setStatus(health.getStatus());
             eventMessage.setCreatedOn(health.getTracked_at().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            String eventMessageStr = eventMessage.getWebsiteName() + "#" + eventMessage.getWebsiteId() + "#" + eventMessage.getWebsiteUrl() + "#" + eventMessage.getStatus() + "#" + eventMessage.getCreatedOn();
 
             switch (monitor.getCategory()) {
                 case INTERNAL_DOMAIN_HEALTH:
                     eventMessage.setEventName(INTERNAL_DOMAIN_HEALTH);
-                    this.redisTemplate.convertAndSend(INTERNAL_DOMAIN_HEALTH_TOPIC, eventMessage).subscribe();
+                    producer.sendMessage(eventMessageStr, internalDomainHealthTopic);
                     break;
                 case EXTERNAL_DOMAIN_HEALTH:
                     eventMessage.setEventName(EXTERNAL_DOMAIN_HEALTH);
-                    this.redisTemplate.convertAndSend(EXTERNAL_DOMAIN_HEALTH_TOPIC, eventMessage).subscribe();
+                    producer.sendMessage(eventMessageStr, externalDomainHealthTopic);
                     break;
                 case THIRD_PARTY_DOMAIN_HEALTH:
                     eventMessage.setEventName(THIRD_PARTY_DOMAIN_HEALTH);
-                    this.redisTemplate.convertAndSend(THIRD_PARTY_DOMAIN_HEALTH_TOPIC, eventMessage).subscribe();
+                    producer.sendMessage(eventMessageStr, tpDomainHealthTopic);
                     break;
             }
             logger.info("Message produced for topic :: "
@@ -97,7 +119,7 @@ public class CronJobExecutor {
             int responseCode = huc.getResponseCode();
             logger.info("Status of :: " + monitor.getWebsite_url() + " ---> " + responseCode);
             health.setResponse_code(responseCode);
-            if(responseCode == HttpStatus.OK.value()) {
+            if (responseCode == HttpStatus.OK.value()) {
                 health.setStatus(0);
             } else {
                 health.setStatus(1);

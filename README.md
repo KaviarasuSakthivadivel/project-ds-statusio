@@ -116,3 +116,45 @@ Follow all the process from the phase 2. Here we can use scale-up in Docker to s
  - Message Producer and Message Consumer Implementations in both phases - Sendil Balan Palanivel
  - Event broker, we split the work for Phase 3 - Kaviarasu Sakthivadivel & Sendil Balan Palanivel
 
+# Project 2 Submission
+I have replaced the broker network with the kafka brokers. The same has been reflected in the docker-compose file. Kindly follow all the below steps to setup. 
+
+## Usage
+    $ https://github.com/KaviarasuSakthivadivel/project-ds-statusio.git`
+    
+    $ cd project-ds-statusio
+
+To execute the backend with Docker, first clean and package using maven commands below. We need to package all the module separately.
+1. First ```service-util```. That's a utility package we need for exchanging data between the docker containers. We have used the absolute path in all the POM files to include this module. After packing this module, change the POM files accordingly,
+
+
+``<dependency>
+<groupId>edu.buffalo.distributedsystems</groupId>
+<artifactId>service-util</artifactId>
+<version>${project.version}</version>
+<scope>system</scope>
+<systemPath>/Volumes/MacintoshHD/Users/kaviarasu/GitHub/status-io/service-util/target/service-util-0.0.1-SNAPSHOT.jar</systemPath> - Absolute path
+</dependency>``
+
+
+Then run the package command in all the other modules.
+
+    $ ./mvnw clean package -DskipTests
+
+After this, use docker-compose to spin up the server.
+
+    $ docker-compose up
+
+Once the server is up, we need to create the topics and the consumers (Users). Kindly use the documentation above to create the consumers/ topics.
+
+Then go to, message-consumer UI, where the consumers can connect using the web sockets and receive the notification(message-events) in real time. Enter the email id and click on connect.
+
+    http://localhost:8083 
+
+After this, please follow the video on how to create the topics and subscriber mapping using the postman collections which I have included above. 
+
+### Contributions
+- Kafka docker setup - Kaviarasu Sakthivadivel
+- Changing the UI configuration for kafka setup - Sendil Balan Palanivel
+
+

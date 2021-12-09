@@ -14,4 +14,9 @@ public class EventMessage {
     private String websiteId;
     private int status;
     private String createdOn;
+
+    @Override
+    public String toString() {
+        return websiteName + "$" + websiteId + "$" + websiteUrl + "$" + status + "$" + createdOn;
+    }
 }

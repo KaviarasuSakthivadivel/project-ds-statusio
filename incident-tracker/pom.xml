@@ -64,6 +64,11 @@
             <scope>system</scope>
             <systemPath>/Volumes/MacintoshHD/Users/kaviarasu/GitHub/status-io/service-util/target/service-util-0.0.1-SNAPSHOT.jar</systemPath>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+            <version>2.7.6</version>
+        </dependency>
     </dependencies>
 
     <build>
