@@ -119,10 +119,14 @@ Follow all the process from the phase 2. Here we can use scale-up in Docker to s
 # Project 2 Submission
 I have replaced the broker network with the kafka brokers. The same has been reflected in the docker-compose file. Kindly follow all the below steps to setup. 
 
+## System Design
+![Architectural Design](images/4.jpg)
+
 ## Usage
     $ https://github.com/KaviarasuSakthivadivel/project-ds-statusio.git`
     
     $ cd project-ds-statusio
+
 
 To execute the backend with Docker, first clean and package using maven commands below. We need to package all the module separately.
 1. First ```service-util```. That's a utility package we need for exchanging data between the docker containers. We have used the absolute path in all the POM files to include this module. After packing this module, change the POM files accordingly,
